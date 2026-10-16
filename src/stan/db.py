@@ -15,7 +15,7 @@ create table if not exists idol (
 
 
 def connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(os.environ.get("STAN_DB", "stan.db"))
+    conn = sqlite3.connect(os.environ.get("STAN_DB") or "stan.db")
     conn.execute("pragma foreign_keys = on")
     conn.executescript(SCHEMA)
     return conn
