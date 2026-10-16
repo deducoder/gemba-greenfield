@@ -123,3 +123,12 @@ def test_amigos_unir_repetido_falla_sin_duplicar(db, capsys):
     assert main(["amigos", "unir", "onces", "--yo", "ana"]) != 0
     assert "ana" in capsys.readouterr().err
     assert rows(db, "select count(*) from miembro where nombre = 'ana'") == [(1,)]
+
+
+def test_amigos_ver_lista_a_cada_miembro(db, capsys):
+    main(["amigos", "crear", "onces", "--yo", "dani"])
+    main(["amigos", "unir", "onces", "--yo", "ana"])
+    main(["amigos", "crear", "otros", "--yo", "luis"])
+    capsys.readouterr()
+    assert main(["amigos", "ver", "onces"]) == 0
+    assert capsys.readouterr().out.splitlines() == ["dani", "ana"]
