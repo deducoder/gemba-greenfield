@@ -213,3 +213,15 @@ def test_amigos_ver_muestra_la_bias_de_cada_miembro(db, capsys):
     capsys.readouterr()
     assert main(["amigos", "ver", "onces"]) == 0
     assert capsys.readouterr().out.splitlines() == ["dani", "ana: Nayeon (TWICE), Karina (aespa)"]
+
+
+def test_bias_no_acepta_un_grupo_distinto_al_de_su_idol(db):
+    escenario()
+    main(["grupo", "ver", "TWICE"])
+    with closing(sqlite3.connect(db)) as conn, pytest.raises(sqlite3.IntegrityError):
+        conn.execute("pragma foreign_keys = on")
+        conn.execute(
+            "insert into bias (amigos_id, persona, idol_id, grupo_id)"
+            " select amigos.id, 'dani', idol.id, (select id from grupo where nombre = 'aespa')"
+            " from amigos, idol where amigos.nombre = 'onces' and idol.nombre = 'Nayeon'"
+        )
