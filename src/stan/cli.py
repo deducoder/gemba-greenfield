@@ -82,12 +82,13 @@ def apartar(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
     amigos = conn.execute("select id from amigos where nombre = ?", (args.amigos,)).fetchone()
     if amigos is None:
         return error(f"el grupo de amigos {args.amigos} no existe")
+    (amigos_id,) = amigos
     idol = conn.execute("select id, grupo_id from idol where nombre = ?", (args.idol,)).fetchone()
     if idol is None:
         return error(f"la idol {args.idol} no está registrada")
     idol_id, grupo_id = idol
     miembro = conn.execute(
-        "select 1 from miembro where amigos_id = ? and nombre = ?", (amigos[0], args.yo)
+        "select 1 from miembro where amigos_id = ? and nombre = ?", (amigos_id, args.yo)
     ).fetchone()
     if miembro is None:
         return error(f"{args.yo} no es miembro de {args.amigos}")
@@ -95,18 +96,18 @@ def apartar(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
         "select idol.nombre, grupo.nombre from bias"
         " join idol on idol.id = bias.idol_id join grupo on grupo.id = bias.grupo_id"
         " where bias.amigos_id = ? and bias.persona = ? and bias.grupo_id = ?",
-        (amigos[0], args.yo, grupo_id),
+        (amigos_id, args.yo, grupo_id),
     ).fetchone()
     if propia is not None:
         return error(f"{args.yo} ya tiene a {propia[0]} como bias de {propia[1]}", 2)
     ocupada = conn.execute(
-        "select persona from bias where amigos_id = ? and idol_id = ?", (amigos[0], idol_id)
+        "select persona from bias where amigos_id = ? and idol_id = ?", (amigos_id, idol_id)
     ).fetchone()
     if ocupada is not None:
         return error(f"{args.idol} ya la apartó {ocupada[0]}", 2)
     conn.execute(
         "insert into bias (amigos_id, persona, idol_id, grupo_id) values (?, ?, ?, ?)",
-        (amigos[0], args.yo, idol_id, grupo_id),
+        (amigos_id, args.yo, idol_id, grupo_id),
     )
     return 0
 
