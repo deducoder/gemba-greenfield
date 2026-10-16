@@ -58,6 +58,17 @@ def amigos_unir(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
     return 0
 
 
+def amigos_ver(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
+    miembros = conn.execute(
+        "select miembro.nombre from miembro join amigos on amigos.id = miembro.amigos_id"
+        " where amigos.nombre = ? order by miembro.rowid",
+        (args.nombre,),
+    )
+    for (nombre,) in miembros:
+        print(nombre)
+    return 0
+
+
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="stan")
     entidades = p.add_subparsers(required=True)
@@ -85,6 +96,9 @@ def parser() -> argparse.ArgumentParser:
     amigos_unir_p.add_argument("nombre")
     amigos_unir_p.add_argument("--yo", required=True)
     amigos_unir_p.set_defaults(comando=amigos_unir)
+    amigos_ver_p = amigos.add_parser("ver")
+    amigos_ver_p.add_argument("nombre")
+    amigos_ver_p.set_defaults(comando=amigos_ver)
 
     return p
 
