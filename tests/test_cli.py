@@ -57,3 +57,14 @@ def test_idol_alta_en_grupo_inexistente_falla_sin_registrar(db, capsys):
     assert main(["idol", "alta", "Nayeon", "--grupo", "TWICE"]) != 0
     assert "TWICE" in capsys.readouterr().err
     assert rows(db, "select count(*) from idol") == [(0,)]
+
+
+def test_grupo_ver_lista_a_cada_integrante(db, capsys):
+    main(["grupo", "alta", "TWICE"])
+    main(["idol", "alta", "Nayeon", "--grupo", "TWICE"])
+    main(["idol", "alta", "Momo", "--grupo", "TWICE"])
+    main(["grupo", "alta", "aespa"])
+    main(["idol", "alta", "Karina", "--grupo", "aespa"])
+    capsys.readouterr()
+    assert main(["grupo", "ver", "TWICE"]) == 0
+    assert capsys.readouterr().out.splitlines() == ["Nayeon", "Momo"]
