@@ -42,18 +42,18 @@ def parser() -> argparse.ArgumentParser:
     entidades = p.add_subparsers(required=True)
 
     grupo = entidades.add_parser("grupo").add_subparsers(required=True)
-    alta = grupo.add_parser("alta")
-    alta.add_argument("nombre")
-    alta.set_defaults(comando=grupo_alta)
-    ver = grupo.add_parser("ver")
-    ver.add_argument("nombre")
-    ver.set_defaults(comando=grupo_ver)
+    grupo_alta_p = grupo.add_parser("alta")
+    grupo_alta_p.add_argument("nombre")
+    grupo_alta_p.set_defaults(comando=grupo_alta)
+    grupo_ver_p = grupo.add_parser("ver")
+    grupo_ver_p.add_argument("nombre")
+    grupo_ver_p.set_defaults(comando=grupo_ver)
 
     idol = entidades.add_parser("idol").add_subparsers(required=True)
-    alta = idol.add_parser("alta")
-    alta.add_argument("nombre")
-    alta.add_argument("--grupo", required=True)
-    alta.set_defaults(comando=idol_alta)
+    idol_alta_p = idol.add_parser("alta")
+    idol_alta_p.add_argument("nombre")
+    idol_alta_p.add_argument("--grupo", required=True)
+    idol_alta_p.set_defaults(comando=idol_alta)
 
     return p
 
