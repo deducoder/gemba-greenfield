@@ -68,3 +68,10 @@ def test_grupo_ver_lista_a_cada_integrante(db, capsys):
     capsys.readouterr()
     assert main(["grupo", "ver", "TWICE"]) == 0
     assert capsys.readouterr().out.splitlines() == ["Nayeon", "Momo"]
+
+
+def test_stan_db_vacia_usa_stan_db_del_directorio_actual(tmp_path, monkeypatch):
+    monkeypatch.setenv("STAN_DB", "")
+    monkeypatch.chdir(tmp_path)
+    assert main(["grupo", "alta", "TWICE"]) == 0
+    assert rows(tmp_path / "stan.db", "select nombre from grupo") == [("TWICE",)]
