@@ -203,6 +203,15 @@ def test_apartar_idol_no_registrada_falla(db, capsys):
     capsys.readouterr()
     assert main(["apartar", "Jennie", "--amigos", "onces", "--yo", "dani"]) == 1
     assert "la idol Jennie no está registrada" in capsys.readouterr().err
+    assert rows(db, BIASES) == []
+
+
+def test_apartar_en_grupo_de_amigos_inexistente_falla(db, capsys):
+    escenario()
+    capsys.readouterr()
+    assert main(["apartar", "Nayeon", "--amigos", "nope", "--yo", "dani"]) == 1
+    assert "el grupo de amigos nope no existe" in capsys.readouterr().err
+    assert rows(db, BIASES) == []
 
 
 def test_amigos_ver_muestra_la_bias_de_cada_miembro(db, capsys):
