@@ -217,7 +217,6 @@ def test_amigos_ver_muestra_la_bias_de_cada_miembro(db, capsys):
 
 def test_bias_no_acepta_un_grupo_distinto_al_de_su_idol(db):
     escenario()
-    main(["grupo", "ver", "TWICE"])
     with closing(sqlite3.connect(db)) as conn, pytest.raises(sqlite3.IntegrityError):
         conn.execute("pragma foreign_keys = on")
         conn.execute(
