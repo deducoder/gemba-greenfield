@@ -188,3 +188,18 @@ def test_apartar_segunda_bias_del_mismo_grupo_se_rechaza_con_codigo_2(db, capsys
     assert main(["apartar", "Momo", "--amigos", "onces", "--yo", "ana"]) == 2
     assert "ana ya tiene a Nayeon como bias de TWICE" in capsys.readouterr().err
     assert rows(db, BIASES) == [("onces", "ana", "Nayeon")]
+
+
+def test_apartar_sin_ser_miembro_falla_sin_apartar(db, capsys):
+    escenario()
+    capsys.readouterr()
+    assert main(["apartar", "Momo", "--amigos", "onces", "--yo", "luis"]) == 1
+    assert "luis no es miembro de onces" in capsys.readouterr().err
+    assert rows(db, BIASES) == []
+
+
+def test_apartar_idol_no_registrada_falla(db, capsys):
+    escenario()
+    capsys.readouterr()
+    assert main(["apartar", "Jennie", "--amigos", "onces", "--yo", "dani"]) == 1
+    assert "la idol Jennie no está registrada" in capsys.readouterr().err
