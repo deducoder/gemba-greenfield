@@ -170,3 +170,21 @@ def test_apartar_una_bias_por_grupo_de_kpop(db):
     assert main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "ana"]) == 0
     assert main(["apartar", "Karina", "--amigos", "onces", "--yo", "ana"]) == 0
     assert rows(db, BIASES) == [("onces", "ana", "Nayeon"), ("onces", "ana", "Karina")]
+
+
+def test_apartar_idol_ya_apartada_se_rechaza_con_codigo_2(db, capsys):
+    escenario()
+    main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "ana"])
+    capsys.readouterr()
+    assert main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "dani"]) == 2
+    assert "Nayeon ya la apartó ana" in capsys.readouterr().err
+    assert rows(db, BIASES) == [("onces", "ana", "Nayeon")]
+
+
+def test_apartar_segunda_bias_del_mismo_grupo_se_rechaza_con_codigo_2(db, capsys):
+    escenario()
+    main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "ana"])
+    capsys.readouterr()
+    assert main(["apartar", "Momo", "--amigos", "onces", "--yo", "ana"]) == 2
+    assert "ana ya tiene a Nayeon como bias de TWICE" in capsys.readouterr().err
+    assert rows(db, BIASES) == [("onces", "ana", "Nayeon")]
