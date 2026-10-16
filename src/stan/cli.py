@@ -47,6 +47,17 @@ def amigos_crear(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
     return 0
 
 
+def amigos_unir(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
+    amigos = conn.execute("select id from amigos where nombre = ?", (args.nombre,)).fetchone()
+    if amigos is None:
+        return error(f"el grupo de amigos {args.nombre} no existe")
+    try:
+        conn.execute("insert into miembro (amigos_id, nombre) values (?, ?)", (amigos[0], args.yo))
+    except sqlite3.IntegrityError:
+        return error(f"{args.yo} ya es miembro de {args.nombre}")
+    return 0
+
+
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="stan")
     entidades = p.add_subparsers(required=True)
@@ -70,6 +81,10 @@ def parser() -> argparse.ArgumentParser:
     amigos_crear_p.add_argument("nombre")
     amigos_crear_p.add_argument("--yo", required=True)
     amigos_crear_p.set_defaults(comando=amigos_crear)
+    amigos_unir_p = amigos.add_parser("unir")
+    amigos_unir_p.add_argument("nombre")
+    amigos_unir_p.add_argument("--yo", required=True)
+    amigos_unir_p.set_defaults(comando=amigos_unir)
 
     return p
 
