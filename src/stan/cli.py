@@ -11,6 +11,11 @@ def error(mensaje: str) -> int:
     return 1
 
 
+def rechazo(mensaje: str) -> int:
+    print(f"error: {mensaje}", file=sys.stderr)
+    return 2
+
+
 def grupo_alta(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
     try:
         conn.execute("insert into grupo (nombre) values (?)", (args.nombre,))
@@ -76,6 +81,19 @@ def apartar(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
     idol_id, grupo_id = conn.execute(
         "select id, grupo_id from idol where nombre = ?", (args.idol,)
     ).fetchone()
+    propia = conn.execute(
+        "select idol.nombre, grupo.nombre from bias"
+        " join idol on idol.id = bias.idol_id join grupo on grupo.id = bias.grupo_id"
+        " where bias.amigos_id = ? and bias.persona = ? and bias.grupo_id = ?",
+        (amigos[0], args.yo, grupo_id),
+    ).fetchone()
+    if propia is not None:
+        return rechazo(f"{args.yo} ya tiene a {propia[0]} como bias de {propia[1]}")
+    ocupada = conn.execute(
+        "select persona from bias where amigos_id = ? and idol_id = ?", (amigos[0], idol_id)
+    ).fetchone()
+    if ocupada is not None:
+        return rechazo(f"{args.idol} ya la apartó {ocupada[0]}")
     conn.execute(
         "insert into bias (amigos_id, persona, idol_id, grupo_id) values (?, ?, ?, ?)",
         (amigos[0], args.yo, idol_id, grupo_id),
