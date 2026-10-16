@@ -70,9 +70,9 @@ def amigos_ver(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
     )
     biases: dict[str, list[str]] = {}
     for miembro, idol, grupo in filas:
-        biases.setdefault(miembro, [])
+        suyas = biases.setdefault(miembro, [])
         if idol is not None:
-            biases[miembro].append(f"{idol} ({grupo})")
+            suyas.append(f"{idol} ({grupo})")
     for miembro, suyas in biases.items():
         print(f"{miembro}: {', '.join(suyas)}" if suyas else miembro)
     return 0
