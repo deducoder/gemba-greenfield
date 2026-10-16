@@ -16,9 +16,10 @@ create table if not exists amigos (
     nombre text unique not null
 );
 create table if not exists miembro (
+    id integer primary key,
     amigos_id integer not null references amigos(id),
     nombre text not null,
-    primary key (amigos_id, nombre)
+    unique (amigos_id, nombre)
 );
 """
 

@@ -61,7 +61,7 @@ def amigos_unir(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
 def amigos_ver(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
     miembros = conn.execute(
         "select miembro.nombre from miembro join amigos on amigos.id = miembro.amigos_id"
-        " where amigos.nombre = ? order by miembro.rowid",
+        " where amigos.nombre = ? order by miembro.id",
         (args.nombre,),
     )
     for (nombre,) in miembros:
