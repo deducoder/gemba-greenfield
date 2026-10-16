@@ -75,3 +75,9 @@ def test_stan_db_vacia_usa_stan_db_del_directorio_actual(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     assert main(["grupo", "alta", "TWICE"]) == 0
     assert rows(tmp_path / "stan.db", "select nombre from grupo") == [("TWICE",)]
+
+
+def test_base_inaccesible_muestra_error_sin_traceback(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("STAN_DB", str(tmp_path / "no-existe" / "test.db"))
+    assert main(["grupo", "ver", "TWICE"]) == 1
+    assert capsys.readouterr().err.startswith("error: ")
