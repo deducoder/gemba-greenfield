@@ -6,14 +6,9 @@ from contextlib import closing
 from stan.db import connect
 
 
-def error(mensaje: str) -> int:
+def error(mensaje: str, codigo: int = 1) -> int:
     print(f"error: {mensaje}", file=sys.stderr)
-    return 1
-
-
-def rechazo(mensaje: str) -> int:
-    print(f"error: {mensaje}", file=sys.stderr)
-    return 2
+    return codigo
 
 
 def grupo_alta(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
@@ -103,12 +98,12 @@ def apartar(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
         (amigos[0], args.yo, grupo_id),
     ).fetchone()
     if propia is not None:
-        return rechazo(f"{args.yo} ya tiene a {propia[0]} como bias de {propia[1]}")
+        return error(f"{args.yo} ya tiene a {propia[0]} como bias de {propia[1]}", 2)
     ocupada = conn.execute(
         "select persona from bias where amigos_id = ? and idol_id = ?", (amigos[0], idol_id)
     ).fetchone()
     if ocupada is not None:
-        return rechazo(f"{args.idol} ya la apartó {ocupada[0]}")
+        return error(f"{args.idol} ya la apartó {ocupada[0]}", 2)
     conn.execute(
         "insert into bias (amigos_id, persona, idol_id, grupo_id) values (?, ?, ?, ?)",
         (amigos[0], args.yo, idol_id, grupo_id),
