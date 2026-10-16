@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import closing
 
 import pytest
 
@@ -13,7 +14,7 @@ def db(tmp_path, monkeypatch):
 
 
 def rows(path, sql):
-    with sqlite3.connect(path) as conn:
+    with closing(sqlite3.connect(path)) as conn:
         return conn.execute(sql).fetchall()
 
 
