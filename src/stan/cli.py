@@ -18,6 +18,17 @@ def grupo_alta(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
     return 0
 
 
+def grupo_ver(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
+    integrantes = conn.execute(
+        "select idol.nombre from idol join grupo on grupo.id = idol.grupo_id"
+        " where grupo.nombre = ? order by idol.id",
+        (args.nombre,),
+    )
+    for (nombre,) in integrantes:
+        print(nombre)
+    return 0
+
+
 def idol_alta(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
     grupo = conn.execute("select id from grupo where nombre = ?", (args.grupo,)).fetchone()
     if grupo is None:
@@ -34,6 +45,9 @@ def parser() -> argparse.ArgumentParser:
     alta = grupo.add_parser("alta")
     alta.add_argument("nombre")
     alta.set_defaults(comando=grupo_alta)
+    ver = grupo.add_parser("ver")
+    ver.add_argument("nombre")
+    ver.set_defaults(comando=grupo_ver)
 
     idol = entidades.add_parser("idol").add_subparsers(required=True)
     alta = idol.add_parser("alta")
