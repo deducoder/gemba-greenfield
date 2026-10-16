@@ -78,9 +78,15 @@ def apartar(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
     amigos = conn.execute("select id from amigos where nombre = ?", (args.amigos,)).fetchone()
     if amigos is None:
         return error(f"el grupo de amigos {args.amigos} no existe")
-    idol_id, grupo_id = conn.execute(
-        "select id, grupo_id from idol where nombre = ?", (args.idol,)
+    idol = conn.execute("select id, grupo_id from idol where nombre = ?", (args.idol,)).fetchone()
+    if idol is None:
+        return error(f"la idol {args.idol} no está registrada")
+    idol_id, grupo_id = idol
+    miembro = conn.execute(
+        "select 1 from miembro where amigos_id = ? and nombre = ?", (amigos[0], args.yo)
     ).fetchone()
+    if miembro is None:
+        return error(f"{args.yo} no es miembro de {args.amigos}")
     propia = conn.execute(
         "select idol.nombre, grupo.nombre from bias"
         " join idol on idol.id = bias.idol_id join grupo on grupo.id = bias.grupo_id"
