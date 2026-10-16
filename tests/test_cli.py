@@ -102,3 +102,24 @@ def test_amigos_crear_repetido_falla_sin_duplicar(db, capsys):
     assert main(["amigos", "crear", "onces", "--yo", "dani"]) != 0
     assert "onces" in capsys.readouterr().err
     assert rows(db, "select count(*) from amigos") == [(1,)]
+
+
+def test_amigos_unir_agrega_al_miembro(db):
+    main(["amigos", "crear", "onces", "--yo", "dani"])
+    assert main(["amigos", "unir", "onces", "--yo", "ana"]) == 0
+    assert rows(db, "select nombre from miembro order by nombre") == [("ana",), ("dani",)]
+
+
+def test_amigos_unir_a_grupo_inexistente_falla(db, capsys):
+    assert main(["amigos", "unir", "onces", "--yo", "ana"]) != 0
+    assert "onces" in capsys.readouterr().err
+    assert rows(db, "select count(*) from miembro") == [(0,)]
+
+
+def test_amigos_unir_repetido_falla_sin_duplicar(db, capsys):
+    main(["amigos", "crear", "onces", "--yo", "dani"])
+    main(["amigos", "unir", "onces", "--yo", "ana"])
+    capsys.readouterr()
+    assert main(["amigos", "unir", "onces", "--yo", "ana"]) != 0
+    assert "ana" in capsys.readouterr().err
+    assert rows(db, "select count(*) from miembro where nombre = 'ana'") == [(1,)]
