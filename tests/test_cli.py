@@ -203,3 +203,13 @@ def test_apartar_idol_no_registrada_falla(db, capsys):
     capsys.readouterr()
     assert main(["apartar", "Jennie", "--amigos", "onces", "--yo", "dani"]) == 1
     assert "la idol Jennie no está registrada" in capsys.readouterr().err
+
+
+def test_amigos_ver_muestra_la_bias_de_cada_miembro(db, capsys):
+    escenario()
+    main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "ana"])
+    main(["apartar", "Karina", "--amigos", "onces", "--yo", "ana"])
+    main(["apartar", "Momo", "--amigos", "otros", "--yo", "dani"])
+    capsys.readouterr()
+    assert main(["amigos", "ver", "onces"]) == 0
+    assert capsys.readouterr().out.splitlines() == ["dani", "ana: Nayeon (TWICE), Karina (aespa)"]
