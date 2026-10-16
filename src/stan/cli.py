@@ -38,6 +38,15 @@ def idol_alta(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
     return 0
 
 
+def amigos_crear(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
+    try:
+        amigos = conn.execute("insert into amigos (nombre) values (?)", (args.nombre,))
+    except sqlite3.IntegrityError:
+        return error(f"el grupo de amigos {args.nombre} ya existe")
+    conn.execute("insert into miembro (amigos_id, nombre) values (?, ?)", (amigos.lastrowid, args.yo))
+    return 0
+
+
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="stan")
     entidades = p.add_subparsers(required=True)
@@ -55,6 +64,12 @@ def parser() -> argparse.ArgumentParser:
     idol_alta_p.add_argument("nombre")
     idol_alta_p.add_argument("--grupo", required=True)
     idol_alta_p.set_defaults(comando=idol_alta)
+
+    amigos = entidades.add_parser("amigos").add_subparsers(required=True)
+    amigos_crear_p = amigos.add_parser("crear")
+    amigos_crear_p.add_argument("nombre")
+    amigos_crear_p.add_argument("--yo", required=True)
+    amigos_crear_p.set_defaults(comando=amigos_crear)
 
     return p
 
