@@ -69,6 +69,20 @@ def amigos_ver(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
     return 0
 
 
+def apartar(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
+    amigos = conn.execute("select id from amigos where nombre = ?", (args.amigos,)).fetchone()
+    if amigos is None:
+        return error(f"el grupo de amigos {args.amigos} no existe")
+    idol_id, grupo_id = conn.execute(
+        "select id, grupo_id from idol where nombre = ?", (args.idol,)
+    ).fetchone()
+    conn.execute(
+        "insert into bias (amigos_id, persona, idol_id, grupo_id) values (?, ?, ?, ?)",
+        (amigos[0], args.yo, idol_id, grupo_id),
+    )
+    return 0
+
+
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="stan")
     entidades = p.add_subparsers(required=True)
@@ -99,6 +113,12 @@ def parser() -> argparse.ArgumentParser:
     amigos_ver_p = amigos.add_parser("ver")
     amigos_ver_p.add_argument("nombre")
     amigos_ver_p.set_defaults(comando=amigos_ver)
+
+    apartar_p = entidades.add_parser("apartar")
+    apartar_p.add_argument("idol")
+    apartar_p.add_argument("--amigos", required=True)
+    apartar_p.add_argument("--yo", required=True)
+    apartar_p.set_defaults(comando=apartar)
 
     return p
 

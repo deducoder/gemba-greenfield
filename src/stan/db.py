@@ -21,6 +21,16 @@ create table if not exists miembro (
     nombre text not null,
     unique (amigos_id, nombre)
 );
+create table if not exists bias (
+    id integer primary key,
+    amigos_id integer not null,
+    persona text not null,
+    idol_id integer not null references idol(id),
+    grupo_id integer not null references grupo(id),
+    foreign key (amigos_id, persona) references miembro(amigos_id, nombre),
+    unique (amigos_id, idol_id),
+    unique (amigos_id, persona, grupo_id)
+);
 """
 
 
