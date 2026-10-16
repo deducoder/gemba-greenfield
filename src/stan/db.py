@@ -11,6 +11,16 @@ create table if not exists idol (
     nombre text not null,
     grupo_id integer not null references grupo(id)
 );
+create table if not exists amigos (
+    id integer primary key,
+    nombre text unique not null
+);
+create table if not exists miembro (
+    id integer primary key,
+    amigos_id integer not null references amigos(id),
+    nombre text not null,
+    unique (amigos_id, nombre)
+);
 """
 
 
