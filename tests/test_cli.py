@@ -91,8 +91,8 @@ def test_amigos_crear_crea_el_grupo_con_quien_lo_crea(db):
 
 
 def test_amigos_y_grupos_comparten_stan_db(db):
-    main(["grupo", "alta", "TWICE"])
-    main(["amigos", "crear", "onces", "--yo", "dani"])
+    assert main(["grupo", "alta", "TWICE"]) == 0
+    assert main(["amigos", "crear", "onces", "--yo", "dani"]) == 0
     assert rows(db, "select nombre from grupo") == [("TWICE",)]
     assert rows(db, "select nombre from amigos") == [("onces",)]
 
