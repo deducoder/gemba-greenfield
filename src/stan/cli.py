@@ -1,6 +1,7 @@
 import argparse
 import sqlite3
 import sys
+from contextlib import closing
 
 from stan.db import connect
 
@@ -61,11 +62,7 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
-        conn = connect()
-        try:
-            with conn:
-                return args.comando(conn, args)
-        finally:
-            conn.close()
+        with closing(connect()) as conn, conn:
+            return args.comando(conn, args)
     except sqlite3.Error as e:
         return error(str(e))
