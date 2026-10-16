@@ -1,2 +1,3 @@
-def main() -> None:
-    print("Hello from stan!")
+from stan.cli import main
+
+__all__ = ["main"]
