@@ -6,9 +6,9 @@ from contextlib import closing
 from stan.db import connect
 
 
-def error(mensaje: str) -> int:
+def error(mensaje: str, codigo: int = 1) -> int:
     print(f"error: {mensaje}", file=sys.stderr)
-    return 1
+    return codigo
 
 
 def grupo_alta(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
@@ -59,13 +59,56 @@ def amigos_unir(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
 
 
 def amigos_ver(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
-    miembros = conn.execute(
-        "select miembro.nombre from miembro join amigos on amigos.id = miembro.amigos_id"
-        " where amigos.nombre = ? order by miembro.id",
+    filas = conn.execute(
+        "select miembro.nombre, idol.nombre, grupo.nombre from miembro"
+        " join amigos on amigos.id = miembro.amigos_id"
+        " left join bias on bias.amigos_id = miembro.amigos_id and bias.persona = miembro.nombre"
+        " left join idol on idol.id = bias.idol_id"
+        " left join grupo on grupo.id = bias.grupo_id"
+        " where amigos.nombre = ? order by miembro.id, bias.id",
         (args.nombre,),
     )
-    for (nombre,) in miembros:
-        print(nombre)
+    biases: dict[str, list[str]] = {}
+    for miembro, idol, grupo in filas:
+        suyas = biases.setdefault(miembro, [])
+        if idol is not None:
+            suyas.append(f"{idol} ({grupo})")
+    for miembro, suyas in biases.items():
+        print(f"{miembro}: {', '.join(suyas)}" if suyas else miembro)
+    return 0
+
+
+def apartar(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
+    amigos = conn.execute("select id from amigos where nombre = ?", (args.amigos,)).fetchone()
+    if amigos is None:
+        return error(f"el grupo de amigos {args.amigos} no existe")
+    (amigos_id,) = amigos
+    idol = conn.execute("select id, grupo_id from idol where nombre = ?", (args.idol,)).fetchone()
+    if idol is None:
+        return error(f"la idol {args.idol} no está registrada")
+    idol_id, grupo_id = idol
+    miembro = conn.execute(
+        "select 1 from miembro where amigos_id = ? and nombre = ?", (amigos_id, args.yo)
+    ).fetchone()
+    if miembro is None:
+        return error(f"{args.yo} no es miembro de {args.amigos}")
+    propia = conn.execute(
+        "select idol.nombre, grupo.nombre from bias"
+        " join idol on idol.id = bias.idol_id join grupo on grupo.id = bias.grupo_id"
+        " where bias.amigos_id = ? and bias.persona = ? and bias.grupo_id = ?",
+        (amigos_id, args.yo, grupo_id),
+    ).fetchone()
+    if propia is not None:
+        return error(f"{args.yo} ya tiene a {propia[0]} como bias de {propia[1]}", 2)
+    ocupada = conn.execute(
+        "select persona from bias where amigos_id = ? and idol_id = ?", (amigos_id, idol_id)
+    ).fetchone()
+    if ocupada is not None:
+        return error(f"{args.idol} ya la apartó {ocupada[0]}", 2)
+    conn.execute(
+        "insert into bias (amigos_id, persona, idol_id, grupo_id) values (?, ?, ?, ?)",
+        (amigos_id, args.yo, idol_id, grupo_id),
+    )
     return 0
 
 
@@ -99,6 +142,12 @@ def parser() -> argparse.ArgumentParser:
     amigos_ver_p = amigos.add_parser("ver")
     amigos_ver_p.add_argument("nombre")
     amigos_ver_p.set_defaults(comando=amigos_ver)
+
+    apartar_p = entidades.add_parser("apartar")
+    apartar_p.add_argument("idol")
+    apartar_p.add_argument("--amigos", required=True)
+    apartar_p.add_argument("--yo", required=True)
+    apartar_p.set_defaults(comando=apartar)
 
     return p
 

@@ -132,3 +132,104 @@ def test_amigos_ver_lista_a_cada_miembro(db, capsys):
     capsys.readouterr()
     assert main(["amigos", "ver", "onces"]) == 0
     assert capsys.readouterr().out.splitlines() == ["dani", "ana"]
+
+
+def escenario():
+    main(["grupo", "alta", "TWICE"])
+    main(["idol", "alta", "Nayeon", "--grupo", "TWICE"])
+    main(["idol", "alta", "Momo", "--grupo", "TWICE"])
+    main(["grupo", "alta", "aespa"])
+    main(["idol", "alta", "Karina", "--grupo", "aespa"])
+    main(["amigos", "crear", "onces", "--yo", "dani"])
+    main(["amigos", "unir", "onces", "--yo", "ana"])
+    main(["amigos", "crear", "otros", "--yo", "dani"])
+
+
+BIASES = (
+    "select amigos.nombre, bias.persona, idol.nombre from bias"
+    " join amigos on amigos.id = bias.amigos_id join idol on idol.id = bias.idol_id"
+    " order by bias.id"
+)
+
+
+def test_apartar_aparta_la_bias(db):
+    escenario()
+    assert main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "dani"]) == 0
+    assert rows(db, BIASES) == [("onces", "dani", "Nayeon")]
+
+
+def test_apartar_en_otro_grupo_de_amigos_si_se_puede(db):
+    escenario()
+    main(["apartar", "Nayeon", "--amigos", "otros", "--yo", "dani"])
+    assert main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "ana"]) == 0
+    assert rows(db, BIASES) == [("otros", "dani", "Nayeon"), ("onces", "ana", "Nayeon")]
+
+
+def test_apartar_una_bias_por_grupo_de_kpop(db):
+    escenario()
+    assert main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "ana"]) == 0
+    assert main(["apartar", "Karina", "--amigos", "onces", "--yo", "ana"]) == 0
+    assert rows(db, BIASES) == [("onces", "ana", "Nayeon"), ("onces", "ana", "Karina")]
+
+
+def test_apartar_idol_ya_apartada_se_rechaza_con_codigo_2(db, capsys):
+    escenario()
+    main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "ana"])
+    capsys.readouterr()
+    assert main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "dani"]) == 2
+    assert "Nayeon ya la apartó ana" in capsys.readouterr().err
+    assert rows(db, BIASES) == [("onces", "ana", "Nayeon")]
+
+
+def test_apartar_segunda_bias_del_mismo_grupo_se_rechaza_con_codigo_2(db, capsys):
+    escenario()
+    main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "ana"])
+    capsys.readouterr()
+    assert main(["apartar", "Momo", "--amigos", "onces", "--yo", "ana"]) == 2
+    assert "ana ya tiene a Nayeon como bias de TWICE" in capsys.readouterr().err
+    assert rows(db, BIASES) == [("onces", "ana", "Nayeon")]
+
+
+def test_apartar_sin_ser_miembro_falla_sin_apartar(db, capsys):
+    escenario()
+    capsys.readouterr()
+    assert main(["apartar", "Momo", "--amigos", "onces", "--yo", "luis"]) == 1
+    assert "luis no es miembro de onces" in capsys.readouterr().err
+    assert rows(db, BIASES) == []
+
+
+def test_apartar_idol_no_registrada_falla(db, capsys):
+    escenario()
+    capsys.readouterr()
+    assert main(["apartar", "Jennie", "--amigos", "onces", "--yo", "dani"]) == 1
+    assert "la idol Jennie no está registrada" in capsys.readouterr().err
+    assert rows(db, BIASES) == []
+
+
+def test_apartar_en_grupo_de_amigos_inexistente_falla(db, capsys):
+    escenario()
+    capsys.readouterr()
+    assert main(["apartar", "Nayeon", "--amigos", "nope", "--yo", "dani"]) == 1
+    assert "el grupo de amigos nope no existe" in capsys.readouterr().err
+    assert rows(db, BIASES) == []
+
+
+def test_amigos_ver_muestra_la_bias_de_cada_miembro(db, capsys):
+    escenario()
+    main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "ana"])
+    main(["apartar", "Karina", "--amigos", "onces", "--yo", "ana"])
+    main(["apartar", "Momo", "--amigos", "otros", "--yo", "dani"])
+    capsys.readouterr()
+    assert main(["amigos", "ver", "onces"]) == 0
+    assert capsys.readouterr().out.splitlines() == ["dani", "ana: Nayeon (TWICE), Karina (aespa)"]
+
+
+def test_bias_no_acepta_un_grupo_distinto_al_de_su_idol(db):
+    escenario()
+    with closing(sqlite3.connect(db)) as conn, pytest.raises(sqlite3.IntegrityError):
+        conn.execute("pragma foreign_keys = on")
+        conn.execute(
+            "insert into bias (amigos_id, persona, idol_id, grupo_id)"
+            " select amigos.id, 'dani', idol.id, (select id from grupo where nombre = 'aespa')"
+            " from amigos, idol where amigos.nombre = 'onces' and idol.nombre = 'Nayeon'"
+        )
