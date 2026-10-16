@@ -132,3 +132,41 @@ def test_amigos_ver_lista_a_cada_miembro(db, capsys):
     capsys.readouterr()
     assert main(["amigos", "ver", "onces"]) == 0
     assert capsys.readouterr().out.splitlines() == ["dani", "ana"]
+
+
+def escenario():
+    main(["grupo", "alta", "TWICE"])
+    main(["idol", "alta", "Nayeon", "--grupo", "TWICE"])
+    main(["idol", "alta", "Momo", "--grupo", "TWICE"])
+    main(["grupo", "alta", "aespa"])
+    main(["idol", "alta", "Karina", "--grupo", "aespa"])
+    main(["amigos", "crear", "onces", "--yo", "dani"])
+    main(["amigos", "unir", "onces", "--yo", "ana"])
+    main(["amigos", "crear", "otros", "--yo", "dani"])
+
+
+BIASES = (
+    "select amigos.nombre, bias.persona, idol.nombre from bias"
+    " join amigos on amigos.id = bias.amigos_id join idol on idol.id = bias.idol_id"
+    " order by bias.id"
+)
+
+
+def test_apartar_aparta_la_bias(db):
+    escenario()
+    assert main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "dani"]) == 0
+    assert rows(db, BIASES) == [("onces", "dani", "Nayeon")]
+
+
+def test_apartar_en_otro_grupo_de_amigos_si_se_puede(db):
+    escenario()
+    main(["apartar", "Nayeon", "--amigos", "otros", "--yo", "dani"])
+    assert main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "ana"]) == 0
+    assert rows(db, BIASES) == [("otros", "dani", "Nayeon"), ("onces", "ana", "Nayeon")]
+
+
+def test_apartar_una_bias_por_grupo_de_kpop(db):
+    escenario()
+    assert main(["apartar", "Nayeon", "--amigos", "onces", "--yo", "ana"]) == 0
+    assert main(["apartar", "Karina", "--amigos", "onces", "--yo", "ana"]) == 0
+    assert rows(db, BIASES) == [("onces", "ana", "Nayeon"), ("onces", "ana", "Karina")]
