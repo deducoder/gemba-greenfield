@@ -82,3 +82,23 @@ def test_base_inaccesible_muestra_error_sin_traceback(tmp_path, monkeypatch, cap
     monkeypatch.setenv("STAN_DB", str(tmp_path / "no-existe" / "test.db"))
     assert main(["grupo", "ver", "TWICE"]) == 1
     assert capsys.readouterr().err.startswith("error: ")
+
+
+def test_amigos_crear_crea_el_grupo_con_quien_lo_crea(db):
+    assert main(["amigos", "crear", "onces", "--yo", "dani"]) == 0
+    assert rows(db, "select nombre from amigos") == [("onces",)]
+    assert rows(db, "select nombre from miembro") == [("dani",)]
+
+
+def test_amigos_y_grupos_comparten_stan_db(db):
+    main(["grupo", "alta", "TWICE"])
+    main(["amigos", "crear", "onces", "--yo", "dani"])
+    assert rows(db, "select nombre from grupo") == [("TWICE",)]
+    assert rows(db, "select nombre from amigos") == [("onces",)]
+
+
+def test_amigos_crear_repetido_falla_sin_duplicar(db, capsys):
+    main(["amigos", "crear", "onces", "--yo", "dani"])
+    assert main(["amigos", "crear", "onces", "--yo", "dani"]) != 0
+    assert "onces" in capsys.readouterr().err
+    assert rows(db, "select count(*) from amigos") == [(1,)]
